@@ -7,42 +7,39 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
+import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import pl.akademiaspring.security_week_01.Roles
 import java.util.*
 
 @Configuration
-class SecurityConfiguration : WebSecurityConfigurerAdapter() {
+class SecurityConfiguration(
+        private val userDetailsService: UserDetailsService
+) : WebSecurityConfigurerAdapter() {
 
     @Bean
-    fun getPasswordEncoder(): PasswordEncoder {
-        return BCryptPasswordEncoder()
-    }
+    fun getPasswordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
     override fun configure(auth: AuthenticationManagerBuilder?) {
-        val userAdmin: User = User(
-                "Kamil",
-                getPasswordEncoder().encode("123"),
-                Collections.singleton(SimpleGrantedAuthority("ROLE_ADMIN")))
-        val userUser: User = User(
-                "user",
-                getPasswordEncoder().encode("321"),
-                Collections.singleton(SimpleGrantedAuthority("ROLE_USER")))
-        auth!!.inMemoryAuthentication().apply {
-            withUser(userAdmin)
-            withUser(userUser)
-        }
+        auth?.userDetailsService(userDetailsService)
     }
 
     override fun configure(http: HttpSecurity?) {
         http!!.authorizeRequests()
-                .antMatchers("/hello/forAdmin").hasRole("ADMIN")
-                .antMatchers("/hello/forUser").hasAnyRole("ADMIN", "USER")
+                .antMatchers("/hello/forAdmin").hasRole(Roles.ADMIN.name)
+                .antMatchers("/hello/forUser").hasAnyRole(Roles.ADMIN.name, Roles.USER.name)
                 .antMatchers("/hello/forUnknown").permitAll()
+                .antMatchers("/sign-up").not().authenticated()
+                .antMatchers("/verify-token").not().authenticated()
                 .and()
-                .formLogin().permitAll()
+                .formLogin().loginPage("/login")
+                .defaultSuccessUrl("/hello/forUser")
+                .failureForwardUrl("/hello/forUnknown")
+                .permitAll()
                 .and()
                 .logout().logoutSuccessUrl("/hello/bye")
-
+                .and()
+                .rememberMe().rememberMeParameter("remember")
     }
 }

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Registration page</title>
+</head>
+<body>
+<h1>Registration page</h1>
+<form th:action="@{/register}" method="post">
+    <label for="username">Username</label>:
+    <input type="text" id="username" name="username"/> <br />
+    <label for="password">Password</label>:
+    <input type="password" id="password" name="password" /> <br />
+    <label>Rola jaką chcesz mieć</label>:
+    <select name="role">
+        <option th:each="myRola : ${T(pl.akademiaspring.security_week_01.Roles).values()}"
+                th:value="${myRola}" th:text="${myRola}">
+        </option>
+    </select> <br />
+    <input type="submit" value="Sing Up" />
+</form>
+</body>
+</html>
